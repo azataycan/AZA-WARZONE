@@ -1,0 +1,9 @@
+
+{
+  "appId": "com.aza.warzone",
+  "appName": "AZA WARZONE",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}
