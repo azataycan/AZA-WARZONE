@@ -1,1 +1,237 @@
 
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>AZA WARZONE</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;overflow:hidden;background:#101820;font-family:Arial;color:white}
+canvas{display:block}
+#hud{position:fixed;inset:0;pointer-events:none}
+#logo{position:absolute;top:18px;left:16px;font-weight:900;font-size:21px;text-shadow:0 2px 5px #000}
+#info{position:absolute;top:50px;left:16px;font-size:12px;color:#b9e4c5}
+#joy{position:absolute;bottom:30px;left:25px;width:125px;height:125px;border-radius:50%;background:#ffffff25;border:2px solid #ffffff70;pointer-events:auto;touch-action:none}
+#stick{position:absolute;width:50px;height:50px;left:35px;top:35px;border-radius:50%;background:#ffffffaa}
+#fire{position:absolute;right:27px;bottom:45px;width:76px;height:76px;border-radius:50%;border:2px solid white;background:#bd302dcc;color:white;font-weight:bold;pointer-events:auto}
+#look{position:absolute;right:0;top:100px;width:55%;height:55%;pointer-events:auto;touch-action:none}
+#tip{position:absolute;bottom:12px;left:0;width:100%;text-align:center;font-size:11px;color:#ddd}
+</style>
+</head>
+<body>
+<div id="hud">
+  <div id="logo">⚔ AZA WARZONE</div>
+  <div id="info">TRAINING ZONE | 3D PROTOTYPE<br>PLAYER: SOLDIER 01</div>
+  <div id="joy"><div id="stick"></div></div>
+  <div id="look"></div>
+  <button id="fire">FIRE</button>
+  <div id="tip">Сол жак — кыймыл • Оң жак — камера • FIRE — ок чыгаруу</div>
+</div>
+
+<script type="module">
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x9bb6c5);
+scene.fog = new THREE.Fog(0x9bb6c5, 35, 110);
+
+const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 200);
+const renderer = new THREE.WebGLRenderer({antialias:false});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x526044,2));
+const sun = new THREE.DirectionalLight(0xffffff,2);
+sun.position.set(-15,30,10);
+sun.castShadow=true;
+scene.add(sun);
+
+const ground = new THREE.Mesh(
+ new THREE.PlaneGeometry(180,180),
+ new THREE.MeshStandardMaterial({color:0x64764d})
+);
+ground.rotation.x=-Math.PI/2;
+ground.receiveShadow=true;
+scene.add(ground);
+
+const grid = new THREE.GridHelper(180,45,0x65785b,0x82916d);
+grid.position.y=0.02;
+scene.add(grid);
+
+function building(x,z,w,h,d,color=0x777d78){
+ const m=new THREE.Mesh(
+  new THREE.BoxGeometry(w,h,d),
+  new THREE.MeshStandardMaterial({color,roughness:1})
+ );
+ m.position.set(x,h/2,z);
+ m.castShadow=true;
+ m.receiveShadow=true;
+ scene.add(m);
+ return m;
+}
+
+// Military training base
+building(0, -19, 19, 7, 10, 0x747b78);
+building(-18,-5,8,5,8,0x77766c);
+building(19,-8,9,6,9,0x666e70);
+building(-13,19,12,4,7,0x77766c);
+building(15,20,10,5,8,0x747b78);
+
+// Concrete barriers
+for(let i=0;i<9;i++){
+ building(-23+i*5,5,3,1.3,1.2,0x9b9a83);
+}
+
+// Capture points
+function capturePoint(x,z,label,color){
+ const ring=new THREE.Mesh(
+  new THREE.TorusGeometry(3,0.13,8,48),
+  new THREE.MeshBasicMaterial({color})
+ );
+ ring.rotation.x=Math.PI/2;
+ ring.position.set(x,0.12,z);
+ scene.add(ring);
+ const spriteCanvas=document.createElement('canvas');
+ spriteCanvas.width=256;spriteCanvas.height=128;
+ const ctx=spriteCanvas.getContext('2d');
+ ctx.fillStyle='white';ctx.font='bold 76px Arial';
+ ctx.textAlign='center';ctx.fillText(label,128,85);
+ const tex=new THREE.CanvasTexture(spriteCanvas);
+ const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex}));
+ sprite.position.set(x,4,z);sprite.scale.set(3,1.5,1);
+ scene.add(sprite);
+}
+capturePoint(-18,-18,'A',0x42a5ff);
+capturePoint(18,-18,'B',0xffb52e);
+capturePoint(0,22,'C',0x55ff8a);
+
+// Player model
+const player=new THREE.Group();
+const uniform=new THREE.MeshStandardMaterial({color:0x344b36});
+const skin=new THREE.MeshStandardMaterial({color:0xb68a69});
+const body=new THREE.Mesh(new THREE.CapsuleGeometry(0.48,0.8,4,8),uniform);
+body.position.y=1.25;
+body.castShadow=true;
+player.add(body);
+const head=new THREE.Mesh(new THREE.SphereGeometry(0.29,12,10),skin);
+head.position.y=2.05;
+player.add(head);
+const helmet=new THREE.Mesh(
+ new THREE.SphereGeometry(0.32,12,8,0,Math.PI*2,0,Math.PI/2),
+ new THREE.MeshStandardMaterial({color:0x263b2b})
+);
+helmet.position.y=2.16;
+player.add(helmet);
+const gun=building(0,0,0.16,0.16,1.2,0x252b29);
+gun.position.set(0,1.55,-0.7);
+player.add(gun);
+scene.add(player);
+player.position.set(0,0,8);
+
+let yaw=0, pitch=0.12;
+let moveX=0,moveY=0;
+const clock=new THREE.Clock();
+
+function updateCamera(){
+ const distance=7;
+ camera.position.set(
+  player.position.x+Math.sin(yaw)*distance,
+  player.position.y+3.3+pitch*5,
+  player.position.z+Math.cos(yaw)*distance
+ );
+ camera.lookAt(player.position.x,1.5,player.position.z);
+}
+updateCamera();
+
+// Mobile joystick
+const joy=document.getElementById('joy');
+const stick=document.getElementById('stick');
+let joyId=null;
+function joystick(e){
+ const r=joy.getBoundingClientRect();
+ let x=e.clientX-(r.left+r.width/2);
+ let y=e.clientY-(r.top+r.height/2);
+ const max=40, len=Math.hypot(x,y);
+ if(len>max){x=x/len*max;y=y/len*max;}
+ stick.style.transform=`translate(${x}px,${y}px)`;
+ moveX=x/max;moveY=y/max;
+}
+joy.addEventListener('pointerdown',e=>{
+ joyId=e.pointerId;joy.setPointerCapture(joyId);joystick(e);
+});
+joy.addEventListener('pointermove',e=>{
+ if(e.pointerId===joyId)joystick(e);
+});
+function stopJoy(){
+ joyId=null;moveX=0;moveY=0;stick.style.transform='';
+}
+joy.addEventListener('pointerup',stopJoy);
+joy.addEventListener('pointercancel',stopJoy);
+
+// Camera swipe
+const look=document.getElementById('look');
+let lookId=null,lastX=0,lastY=0;
+look.addEventListener('pointerdown',e=>{
+ lookId=e.pointerId;lastX=e.clientX;lastY=e.clientY;
+ look.setPointerCapture(lookId);
+});
+look.addEventListener('pointermove',e=>{
+ if(e.pointerId!==lookId)return;
+ yaw-=(e.clientX-lastX)*0.006;
+ pitch=Math.max(-0.35,Math.min(0.65,pitch+(e.clientY-lastY)*0.004));
+ lastX=e.clientX;lastY=e.clientY;
+});
+look.addEventListener('pointerup',()=>lookId=null);
+look.addEventListener('pointercancel',()=>lookId=null);
+
+// Shooting effect
+const bullets=[];
+document.getElementById('fire').addEventListener('pointerdown',e=>{
+ e.preventDefault();
+ const direction=new THREE.Vector3();
+ camera.getWorldDirection(direction);
+ const bullet=new THREE.Mesh(
+  new THREE.SphereGeometry(0.09,8,8),
+  new THREE.MeshBasicMaterial({color:0xffdd66})
+ );
+ bullet.position.copy(player.position).add(new THREE.Vector3(0,1.5,0));
+ scene.add(bullet);
+ bullets.push({mesh:bullet,dir:direction,life:2});
+});
+
+function animate(){
+ requestAnimationFrame(animate);
+ const dt=Math.min(clock.getDelta(),0.04);
+ const speed=7;
+ const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
+ const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+ player.position.addScaledVector(forward,-moveY*speed*dt);
+ player.position.addScaledVector(right,moveX*speed*dt);
+ if(Math.abs(moveX)+Math.abs(moveY)>0.1)player.rotation.y=yaw;
+ player.position.x=THREE.MathUtils.clamp(player.position.x,-45,45);
+ player.position.z=THREE.MathUtils.clamp(player.position.z,-45,45);
+ updateCamera();
+
+ for(let i=bullets.length-1;i>=0;i--){
+  const b=bullets[i];
+  b.mesh.position.addScaledVector(b.dir,35*dt);
+  b.life-=dt;
+  if(b.life<=0){
+   scene.remove(b.mesh);bullets.splice(i,1);
+  }
+ }
+ renderer.render(scene,camera);
+}
+animate();
+
+addEventListener('resize',()=>{
+ camera.aspect=innerWidth/innerHeight;
+ camera.updateProjectionMatrix();
+ renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
