@@ -1,0 +1,17 @@
+
+{
+  "name": "aza-warzone",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AZA WARZONE mobile 3D shooter",
+  "scripts": {
+    "build:web": "mkdir -p www && cp index.html www/index.html"
+  },
+  "dependencies": {
+    "@capacitor/core": "latest",
+    "@capacitor/android": "latest"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "latest"
+  }
+}
