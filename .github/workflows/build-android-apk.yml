@@ -112,6 +112,38 @@ jobs:
           }
           """, encoding="utf-8")
           PY
+       
+      - name: Extend game into display cutout
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("android/app/src/main/java/com/aza/warzone/MainActivity.java")
+          s = p.read_text(encoding="utf-8")
+
+          if "import android.view.WindowManager;" not in s:
+              s = s.replace(
+                  "import android.os.Bundle;",
+                  "import android.os.Bundle;\nimport android.os.Build;\nimport android.view.WindowManager;"
+              )
+
+          old = """super.onCreate(savedInstanceState);
+                  hideSystemBars();"""
+
+          new = """super.onCreate(savedInstanceState);
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                      WindowManager.LayoutParams params = getWindow().getAttributes();
+                      params.layoutInDisplayCutoutMode =
+                          WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+                      getWindow().setAttributes(params);
+                  }
+                  hideSystemBars();"""
+
+          if old not in s:
+              raise SystemExit("MainActivity onCreate block not found")
+
+          p.write_text(s.replace(old, new, 1), encoding="utf-8")
+          PY
           
 
       - name: Sync Android
