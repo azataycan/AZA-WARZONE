@@ -145,6 +145,24 @@ jobs:
           p.write_text(s.replace(old, new, 1), encoding="utf-8")
           PY
           
+      - name: Enable edge-to-edge layout
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("android/app/src/main/java/com/aza/warzone/MainActivity.java")
+          s = p.read_text(encoding="utf-8")
+
+          line = "WindowCompat.setDecorFitsSystemWindows(getWindow(), false);"
+          if line not in s:
+              needle = "super.onCreate(savedInstanceState);"
+              if needle not in s:
+                  raise SystemExit("MainActivity onCreate not found")
+              s = s.replace(needle, needle + "\n        " + line, 1)
+
+          p.write_text(s, encoding="utf-8")
+          PY
+          
 
       - name: Sync Android
         run: npx cap sync android
